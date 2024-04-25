@@ -18,6 +18,9 @@
 #define BACK_COLOR_RED "\x1b[41m"
 #define BACK_COLOR_MAGENTA "\x1b[45m"
 #define BACK_COLOR_CYAN "\x1b[46m"
+
+#define COLUMNS 3 //count of columns which will be displayed
+#define TEXT_OFFS 35 //width of each column
 /*
 struct dirent {
     ino_t          d_ino;       // inode number 
@@ -27,12 +30,28 @@ struct dirent {
     char           d_name[256]; // filename 
 };
 */
+void printname(char *str, int off){//string with name and offset
+	size_t len=0;
+	while(*(str+6+len) != '\n'){
+		len++;
+	}
+	if(off<len){
+		printf("\n\n" COLOR_RESET BACK_COLOR_RED"Sorry, wrong TEXT_OFFS, make it bigger" COLOR_RESET "\n");
+		exit(-1);
+	}
+	for(size_t i=0; i<(off-len); i++)
+		printf(" ");
+	for(size_t i=0; i<len; i++)
+		printf("%c", *(str+6+i));
+	printf(COLOR_RESET);
+}
+
 int main(){
-	printf("\t\t\t\t\t\t" BACK_COLOR_RED "List of running processes" COLOR_RESET "\n\n");
+	printf("\t\t\t\t\t\t" COLOR_RESET BACK_COLOR_RED "List of running processes" COLOR_RESET "\n\n");
 	struct dirent **listproc;//list of pid's
 	ssize_t filecnt = scandir("/proc", &listproc, NULL, alphasort);//count of files in dirrectory
 	if(filecnt < 0){
-		printf("Sorry, have problems\n");
+		printf("\n\n" COLOR_RESET BACK_COLOR_RED"Sorry, have problems" COLOR_RESET "\n");
 		exit(-1);
 	}
 
@@ -53,32 +72,26 @@ int main(){
 		}
 
 		char *nameproc = (char*) malloc(50);//name of process
-		size_t namelen=0;//len of process's name
 		read(openfiled, nameproc, 50);
-		while(*(nameproc+namelen) != '\n')
-			namelen++;
-		char *NAME = (char*) malloc(namelen-6);
-		memcpy(NAME, nameproc+6, namelen-6);
 
-		if((spes%6)<=3 && (spes%6) != 0)
-			printf( COLOR_CYAN "%35s\t" COLOR_RESET , NAME );
-		if((spes%6)>3 || (spes%6) == 0)
-			printf( COLOR_GREEN "%35s\t" COLOR_RESET , NAME );
-		if((spes%3)==0)
+		if((spes%(COLUMNS*2))<=COLUMNS && (spes%(COLUMNS*2)) != 0){
+			printf(COLOR_CYAN);
+			printname(nameproc, TEXT_OFFS);
+		}
+		if((spes%(COLUMNS*2))>COLUMNS || (spes%(COLUMNS*2)) == 0){
+			printf(COLOR_GREEN);
+			printname(nameproc, TEXT_OFFS);
+		}
+		if((spes%COLUMNS)==0)
 			printf("\n");
 
 
-
 		nameproc=NULL;
-		NAME=NULL;
 		procid=NULL;
 		free(procid);
 		free(nameproc);
-		free(NAME);
 		close(openfiled);
 		spes++;
 	}
-
-
 	free(listproc);
 }
